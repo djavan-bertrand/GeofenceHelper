@@ -31,6 +31,7 @@ public class GeofenceStore {
     private static final String RADIUS_KEY = "RADIUS_KEY";
     private static final String EXPIRATION_KEY = "EXPIRATION_KEY";
     private static final String TRANSITION_KEY = "TRANSITION_KEY";
+    private static final String EXPIRATION_DATE_KEY = "EXPIRATION_DATE_KEY";
 
     private static final double NOT_VALID_POSITION = 500;
 
@@ -69,6 +70,8 @@ public class GeofenceStore {
         editor.putFloat(prefix + RADIUS_KEY, geofence.getRadius());
         editor.putLong(prefix + EXPIRATION_KEY, geofence.getExpirationDuration());
         editor.putInt(prefix + TRANSITION_KEY, geofence.getTransitionType());
+        editor.putLong(prefix + EXPIRATION_DATE_KEY, geofence.getExpirationDateInMs());
+
 
         geofenceIdSet.add(geofence.getId());
         editor.putStringSet(mPrefix + GEOFENCE_ID_SET_KEY, geofenceIdSet);
@@ -93,6 +96,7 @@ public class GeofenceStore {
             editor.remove(prefix + RADIUS_KEY);
             editor.remove(prefix + EXPIRATION_KEY);
             editor.remove(prefix + TRANSITION_KEY);
+            editor.remove(prefix + EXPIRATION_DATE_KEY);
 
             geofenceIdSet.remove(geofence.getId());
             editor.putStringSet(GEOFENCE_ID_SET_KEY, geofenceIdSet);

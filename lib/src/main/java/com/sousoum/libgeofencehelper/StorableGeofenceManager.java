@@ -106,23 +106,34 @@ public class StorableGeofenceManager implements
      * Add a geofence to the store
      * This will also add the geofence to the google api client if connected. If not, it will trigger a connection
      * @param storableGeofence the geofence to store
+     * @return true if add has been asked, false otherwise. false could be returned if the geofence is expired
      */
-    public void addGeofence(@NonNull StorableGeofence storableGeofence) {
+    public boolean addGeofence(@NonNull StorableGeofence storableGeofence) {
+        boolean addedOngoing = false;
+        if (! storableGeofence.isExpired())
+        {
+            mToAddStore.storeGeofence(storableGeofence);
 
-        mToAddStore.storeGeofence(storableGeofence);
+            if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
+            {
+                ArrayList<Geofence> geofenceList = new ArrayList<>();
+                Geofence geofence = storableGeofence.toGeofence();
+                geofenceList.add(geofence);
 
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            ArrayList<Geofence> geofenceList = new ArrayList<>();
-            Geofence geofence = storableGeofence.toGeofence();
-            geofenceList.add(geofence);
+                GeofenceAddStatus addStatus = new GeofenceAddStatus(storableGeofence);
 
-            GeofenceAddStatus addStatus = new GeofenceAddStatus(storableGeofence);
+                mGeofencingAPI.addGeofences(mGoogleApiClient, geofenceList, createRequestPendingIntent(storableGeofence)).setResultCallback(addStatus);
+                Log.i(TAG, "Added " + storableGeofence);
+            }
+            else
+            {
+                googleApiConnect();
+            }
 
-            mGeofencingAPI.addGeofences(mGoogleApiClient, geofenceList, createRequestPendingIntent(storableGeofence)).setResultCallback(addStatus);
-            Log.i(TAG, "Added " + storableGeofence);
-        } else {
-            googleApiConnect();
+            addedOngoing = true;
         }
+
+        return addedOngoing;
     }
 
     /**
@@ -162,12 +173,17 @@ public class StorableGeofenceManager implements
                 ArrayList<Geofence> geofenceList = new ArrayList<>();
                 // for each geofence, add it to the Google API Client
                 for (StorableGeofence storableGeofence : storedGeofences) {
-                    Geofence geofence = storableGeofence.toGeofence();
-                    geofenceList.clear();
-                    geofenceList.add(geofence);
+                    if (! storableGeofence.isExpired()) {
+                        Geofence geofence = storableGeofence.toGeofence();
+                        geofenceList.clear();
+                        geofenceList.add(geofence);
 
-                    mGeofencingAPI.addGeofences(mGoogleApiClient, geofenceList, createRequestPendingIntent(storableGeofence));
-                    Log.i(TAG, "Added " + storableGeofence);
+                        mGeofencingAPI.addGeofences(mGoogleApiClient, geofenceList, createRequestPendingIntent(storableGeofence));
+                        Log.i(TAG, "Added " + storableGeofence);
+                    } else {
+                        // if the geofence has expired, add it to the list to delete
+                        mToRemoveStore.storeGeofenceId(storableGeofence.getId());
+                    }
                 }
                 Log.i(TAG, "All already stored geofences have been submitted to be synchronized with Google API Client");
             }

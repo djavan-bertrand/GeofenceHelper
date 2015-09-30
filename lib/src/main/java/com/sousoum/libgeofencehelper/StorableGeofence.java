@@ -2,6 +2,8 @@ package com.sousoum.libgeofencehelper;
 
 import com.google.android.gms.location.Geofence;
 
+import java.util.Date;
+
 /**
  * Created by Djavan on 15/05/2015.
  */
@@ -19,6 +21,7 @@ public class StorableGeofence {
     private final float mRadius;
     private long mExpirationDuration;
     private int mTransitionType;
+    private long mExpirationDateInMs;
 
     /**
      * Create a storable geofence
@@ -43,6 +46,13 @@ public class StorableGeofence {
         this.mRadius = radius;
         this.mExpirationDuration = expiration;
         this.mTransitionType = transition;
+        if (mExpirationDuration != Geofence.NEVER_EXPIRE)
+        {
+            long nowInMs = new Date().getTime();
+            mExpirationDateInMs = nowInMs + mExpirationDuration;
+        } else {
+            mExpirationDateInMs = 0;
+        }
     }
 
     // Instance field getters.
@@ -61,11 +71,41 @@ public class StorableGeofence {
     public float getRadius() {
         return mRadius;
     }
+
+    /**
+     * Return the real expiration duration
+     * @return the time in milli until the expiration date
+     */
     public long getExpirationDuration() {
-        return mExpirationDuration;
+        long expirationDuration = mExpirationDuration;
+        if (mExpirationDuration != Geofence.NEVER_EXPIRE)
+        {
+            long nowInMs = new Date().getTime();
+            expirationDuration = nowInMs - mExpirationDateInMs;
+        }
+
+        return expirationDuration;
     }
     public int getTransitionType() {
         return mTransitionType;
+    }
+    public long getExpirationDateInMs()
+    {
+        return mExpirationDateInMs;
+    }
+
+    public boolean isExpired()
+    {
+        boolean isExpired = false;
+        if (mExpirationDuration != Geofence.NEVER_EXPIRE)
+        {
+            long nowInMs = new Date().getTime();
+            if (nowInMs > mExpirationDateInMs) {
+                isExpired = true;
+            }
+        }
+
+        return isExpired;
     }
 
     /**
@@ -89,6 +129,7 @@ public class StorableGeofence {
         builder.append("\t(").append(mLatitude).append(", ").append(mLongitude).append(")\n");
         builder.append("\tradius : ").append(mRadius).append("\n");
         builder.append("\texpiration : ").append(mExpirationDuration).append("\n");
+        builder.append("\texpirationDateInMS : ").append(mExpirationDateInMs).append("\n");
         builder.append("\tTransition : ").append(mTransitionType).append("\n");
         builder.append("\tReceiver : ").append(mPendingIntentClassName).append("\n");
         return builder.toString();

@@ -156,7 +156,10 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
                 200,
                 Geofence.NEVER_EXPIRE,
                 Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT);
-        mGeofenceManager.addGeofence(storableGeofence);
+        boolean addedOnGoing = mGeofenceManager.addGeofence(storableGeofence);
+        if (!addedOnGoing) {
+            Log.e(TAG, "Addition of geofence has been refused " + storableGeofence);
+        }
     }
 
     //region StorableGeofenceListener
