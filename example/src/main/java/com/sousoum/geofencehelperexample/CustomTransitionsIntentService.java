@@ -8,7 +8,10 @@ import android.support.v4.app.NotificationCompat;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
+import com.sousoum.libgeofencehelper.StorableGeofence;
+import com.sousoum.libgeofencehelper.StorableGeofenceManager;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -44,13 +47,21 @@ public class CustomTransitionsIntentService extends IntentService {
                         transitionStr = "Unknown-";
                 }
 
+                StorableGeofenceManager manager = new StorableGeofenceManager(this);
+
                 List<Geofence> triggeringGeo = geoEvent.getTriggeringGeofences();
 
                 StringBuilder strBuilder = new StringBuilder();
                 strBuilder.append(transitionStr);
                 for (int i = 0; i < triggeringGeo.size(); i++) {
                     Geofence geo = triggeringGeo.get(i);
+                    StorableGeofence storableGeofence = manager.getGeofence(geo.getRequestId());
                     strBuilder.append(geo.getRequestId());
+                    if (storableGeofence != null && storableGeofence.getAdditionalData() != null) {
+                        HashMap<String, Object> additionalData = storableGeofence.getAdditionalData();
+                        strBuilder.append("(").append(additionalData.get(MainActivity.ADDITIONAL_DATA_TIME)).append(" - ").append(additionalData.get(MainActivity.ADDITIONAL_DATA_PACKAGE)).append(")");
+                    }
+
                     strBuilder.append("-");
                 }
                 notifText = strBuilder.toString();

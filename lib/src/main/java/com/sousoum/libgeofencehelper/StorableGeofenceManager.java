@@ -267,6 +267,27 @@ public class StorableGeofenceManager implements
         return mSyncedStore.getAllGeofences();
     }
 
+    /**
+     * Get a stored Geofence which synced with Google API Client.
+     * @param id the id of the searched geofence
+     * @return a StorableGeofence that matches the given id
+     */
+    public StorableGeofence getGeofence(String id) {
+        StorableGeofence storableGeofence = null;
+
+        if (id != null) {
+            ArrayList<StorableGeofence> allGeo = getAllGeofences();
+
+            for (StorableGeofence currentGeofence : allGeo) {
+                if (currentGeofence.getId().equals(id)) {
+                    storableGeofence = currentGeofence;
+                    break;
+                }
+            }
+        }
+        return storableGeofence;
+    }
+
     //region GoogleApiClient.ConnectionCallbacks
     @Override
     public void onConnected(Bundle bundle) {
@@ -289,6 +310,7 @@ public class StorableGeofenceManager implements
     }
     //endregion GoogleApiClient.OnConnectionFailedListener
 
+    //region Result callbacks
     private class GeofenceRemoveStatus implements ResultCallback<Status> {
 
         /**
@@ -347,4 +369,5 @@ public class StorableGeofenceManager implements
             }
         }
     }
+    //endregion Result callbacks
 }

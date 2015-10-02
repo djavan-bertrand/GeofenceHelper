@@ -1,12 +1,11 @@
 package com.sousoum.geofencehelperexample;
 
 import android.content.Context;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,17 +19,22 @@ import com.google.android.gms.location.Geofence;
 import com.sousoum.libgeofencehelper.StorableGeofence;
 import com.sousoum.libgeofencehelper.StorableGeofenceManager;
 
-import java.security.Provider;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 
-public class MainActivity extends ActionBarActivity implements LocationListener, StorableGeofenceManager.StorableGeofenceManagerListener {
+public class MainActivity extends AppCompatActivity implements LocationListener, StorableGeofenceManager.StorableGeofenceManagerListener {
 
     private static final String TAG = "MainActivity";
 
     private static final String GEOFENCE_ID_FOR_DEFAULT_RECEIVER = "DefaultReceiverGeofence";
     private static final String GEOFENCE_ID_FOR_CUSTOM_RECEIVER = "CustomReceiverGeofence";
+
+    public static final String ADDITIONAL_DATA_TIME = "Time";
+    public static final String ADDITIONAL_DATA_PACKAGE = "Package";
 
     private LocationManager mLocationManager;
     private StorableGeofenceManager mGeofenceManager;
@@ -123,11 +127,14 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
     }
 
     public void onCustomClicked(View view) {
-        addGeofence(false);
+        HashMap<String, Object> additionalData = new HashMap<>();
+        additionalData.put(ADDITIONAL_DATA_TIME, new Date().getTime()); // add a long
+        additionalData.put(ADDITIONAL_DATA_PACKAGE, getApplicationContext().getPackageName()); // add a String
+        addGeofence(false, additionalData);
     }
 
     public void onDefaultClicked(View view) {
-        addGeofence(true);
+        addGeofence(true, null);
     }
 
     public void onDeleteAllClicked(View view) {
@@ -137,7 +144,7 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
         }
     }
 
-    private void addGeofence(boolean defaultReceiver) {
+    private void addGeofence(boolean defaultReceiver, HashMap<String, Object> additionalData) {
         String geoId;
         String receiverClassName;
         if (defaultReceiver) {
@@ -155,7 +162,8 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
                 mCurrentLocation.getLongitude(),
                 200,
                 Geofence.NEVER_EXPIRE,
-                Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT);
+                Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT,
+                additionalData);
         boolean addedOnGoing = mGeofenceManager.addGeofence(storableGeofence);
         if (!addedOnGoing) {
             Log.e(TAG, "Addition of geofence has been refused " + storableGeofence);

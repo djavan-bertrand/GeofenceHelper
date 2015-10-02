@@ -3,6 +3,7 @@ package com.sousoum.libgeofencehelper;
 import com.google.android.gms.location.Geofence;
 
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by Djavan on 15/05/2015.
@@ -19,9 +20,10 @@ public class StorableGeofence {
     private final double mLatitude;
     private final double mLongitude;
     private final float mRadius;
-    private long mExpirationDuration;
-    private int mTransitionType;
-    private long mExpirationDateInMs;
+    private final long mExpirationDuration;
+    private final int mTransitionType;
+    private final long mExpirationDateInMs;
+    private final HashMap<String, Object> mAdditionalData;
 
     /**
      * Create a storable geofence
@@ -35,9 +37,10 @@ public class StorableGeofence {
      * @param radius Radius of the geofence circle in meters.
      * @param expiration Geofence expiration duration.
      * @param transition Type of Geofence transition.
+     * @param additionalData Additional data you want to pass. It maps a String to an Object. This Object should be either a String, Long, Integer, Double Boolean or Float
      */
     public StorableGeofence(String geofenceId, String pendingIntentClassName, double latitude, double longitude, float radius,
-                            long expiration, int transition) {
+                            long expiration, int transition, HashMap<String, Object> additionalData) {
         // Set the instance fields from the constructor.
         this.mRequestId = geofenceId;
         this.mPendingIntentClassName = pendingIntentClassName;
@@ -53,6 +56,7 @@ public class StorableGeofence {
         } else {
             mExpirationDateInMs = 0;
         }
+        this.mAdditionalData = additionalData;
     }
 
     // Instance field getters.
@@ -70,6 +74,10 @@ public class StorableGeofence {
     }
     public float getRadius() {
         return mRadius;
+    }
+    public HashMap<String, Object> getAdditionalData()
+    {
+        return mAdditionalData;
     }
 
     /**
@@ -131,6 +139,7 @@ public class StorableGeofence {
         builder.append("\texpiration : ").append(mExpirationDuration).append("\n");
         builder.append("\texpirationDateInMS : ").append(mExpirationDateInMs).append("\n");
         builder.append("\tTransition : ").append(mTransitionType).append("\n");
+        builder.append("\tAdditional data : ").append(mAdditionalData).append("\n");
         builder.append("\tReceiver : ").append(mPendingIntentClassName).append("\n");
         return builder.toString();
     }

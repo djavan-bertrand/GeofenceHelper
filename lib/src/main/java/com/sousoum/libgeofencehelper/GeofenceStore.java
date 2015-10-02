@@ -8,6 +8,7 @@ import android.util.Log;
 import com.google.android.gms.location.Geofence;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,6 +23,8 @@ public class GeofenceStore {
      * This implementation stores the geofences in the preferences
      */
 
+    private static final String TAG = "GeofenceStore";
+
     private static final String SHARED_PREFS = "GeofenceHelperLibStore";
 
     private static final String GEOFENCE_ID_SET_KEY = "GEOFENCE_ID_SET_KEY";
@@ -32,6 +35,8 @@ public class GeofenceStore {
     private static final String EXPIRATION_KEY = "EXPIRATION_KEY";
     private static final String TRANSITION_KEY = "TRANSITION_KEY";
     private static final String EXPIRATION_DATE_KEY = "EXPIRATION_DATE_KEY";
+    private static final String ADDITIONAL_DATA_KEY = "ADDITIONAL_DATA_KEY";
+    private static final String ADDITIONAL_DATA_TYPE_KEY = "ADDITIONAL_DATA_TYPE_KEY";
 
     private static final double NOT_VALID_POSITION = 500;
 
@@ -72,6 +77,39 @@ public class GeofenceStore {
         editor.putInt(prefix + TRANSITION_KEY, geofence.getTransitionType());
         editor.putLong(prefix + EXPIRATION_DATE_KEY, geofence.getExpirationDateInMs());
 
+        // for each additional data, store its value and its type
+        if (geofence.getAdditionalData() != null) {
+            Set<String> keySet = geofence.getAdditionalData().keySet();
+            for (String key : keySet) {
+                if (key != null && !key.equals("")) {
+                    Object value = geofence.getAdditionalData().get(key);
+                    if (value != null) {
+                        Class valueClass = value.getClass();
+                        if (valueClass.equals(String.class)) {
+                            editor.putString(prefix + ADDITIONAL_DATA_KEY + key, (String)value);
+                            editor.putString(prefix + ADDITIONAL_DATA_TYPE_KEY + key, String.class.toString());
+                        } else if (valueClass.equals(Long.class)) {
+                            editor.putLong(prefix + ADDITIONAL_DATA_KEY + key, (Long) value);
+                            editor.putString(prefix + ADDITIONAL_DATA_TYPE_KEY + key, Long.class.toString());
+                        } else if (valueClass.equals(Integer.class)) {
+                            editor.putInt(prefix + ADDITIONAL_DATA_KEY + key, (Integer) value);
+                            editor.putString(prefix + ADDITIONAL_DATA_TYPE_KEY + key, Integer.class.toString());
+                        } else if (valueClass.equals(Float.class)) {
+                            editor.putFloat(prefix + ADDITIONAL_DATA_KEY + key, (Float) value);
+                            editor.putString(prefix + ADDITIONAL_DATA_TYPE_KEY + key, Float.class.toString());
+                        } else if (valueClass.equals(Boolean.class)) {
+                            editor.putBoolean(prefix + ADDITIONAL_DATA_KEY + key, (Boolean) value);
+                            editor.putString(prefix + ADDITIONAL_DATA_TYPE_KEY + key, Boolean.class.toString());
+                        } else {
+                            Log.e(TAG, "Bad additional info data", new Exception("Bad additional info data type"));
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "Bad additional info data", new Exception("Bad additional info data key : " + key));
+                }
+            }
+            editor.putStringSet(prefix + ADDITIONAL_DATA_KEY, keySet);
+        }
 
         geofenceIdSet.add(geofence.getId());
         editor.putStringSet(mPrefix + GEOFENCE_ID_SET_KEY, geofenceIdSet);
@@ -97,6 +135,14 @@ public class GeofenceStore {
             editor.remove(prefix + EXPIRATION_KEY);
             editor.remove(prefix + TRANSITION_KEY);
             editor.remove(prefix + EXPIRATION_DATE_KEY);
+            Set<String> keySet = mPrefs.getStringSet(prefix + ADDITIONAL_DATA_KEY, null);
+            if (keySet != null) {
+                for (String key : keySet) {
+                    editor.remove(prefix + ADDITIONAL_DATA_KEY + key);
+                    editor.remove(prefix + ADDITIONAL_DATA_TYPE_KEY + key);
+                }
+            }
+            editor.remove(prefix + ADDITIONAL_DATA_KEY);
 
             geofenceIdSet.remove(geofence.getId());
             editor.putStringSet(GEOFENCE_ID_SET_KEY, geofenceIdSet);
@@ -208,8 +254,32 @@ public class GeofenceStore {
             float radius = mPrefs.getFloat(prefix + RADIUS_KEY, 100);
             long expiration = mPrefs.getLong(prefix + EXPIRATION_KEY, Geofence.NEVER_EXPIRE);
             int transition = mPrefs.getInt(prefix + TRANSITION_KEY, Geofence.GEOFENCE_TRANSITION_ENTER);
+            HashMap<String, Object> additionalInfo = new HashMap<>();
+            Set<String> keySet = mPrefs.getStringSet(prefix + ADDITIONAL_DATA_KEY, null);
+            if (keySet != null) {
+                for (String key : keySet) {
+                    Object value = null;
+                    String type = mPrefs.getString(prefix + ADDITIONAL_DATA_TYPE_KEY + key, null);
+                    if (type != null) {
+                        if (type.equals(String.class.toString())) {
+                            value = mPrefs.getString(prefix + ADDITIONAL_DATA_KEY + key, null);
+                        } else if (type.equals(Long.class.toString())) {
+                            value = mPrefs.getLong(prefix + ADDITIONAL_DATA_KEY + key, 0);
+                        } else if (type.equals(Integer.class.toString())) {
+                            value =  mPrefs.getInt(prefix + ADDITIONAL_DATA_KEY + key, 0);
+                        } else if (type.equals(Float.class.toString())) {
+                            value = mPrefs.getFloat(prefix + ADDITIONAL_DATA_KEY + key, 0);
+                        } else if (type.equals(Boolean.class.toString())) {
+                            value =  mPrefs.getBoolean(prefix + ADDITIONAL_DATA_KEY + key, false);
+                        }
+                    }
+                    if (value != null) {
+                        additionalInfo.put(key, value);
+                    }
+                }
+            }
 
-            storableGeofence = new StorableGeofence(geofenceId, pendingIntentClassName, latitude, longitude, radius, expiration, transition);
+            storableGeofence = new StorableGeofence(geofenceId, pendingIntentClassName, latitude, longitude, radius, expiration, transition, additionalInfo);
         }
 
         return storableGeofence;
