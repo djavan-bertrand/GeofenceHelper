@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 
 public class MainActivity extends AppCompatActivity implements LocationListener, StorableGeofenceManager.StorableGeofenceManagerListener {
@@ -112,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         return super.onOptionsItemSelected(item);
     }
 
-    public void updateUI() {
+    private void updateUI() {
         if (mCurrentLocation != null) {
             mDefaultBt.setEnabled(true);
             mCustomBt.setEnabled(true);

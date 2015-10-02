@@ -132,15 +132,14 @@ public class StorableGeofence {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("Geofence ").append(mRequestId).append(" : \n");
-        builder.append("\t(").append(mLatitude).append(", ").append(mLongitude).append(")\n");
-        builder.append("\tradius : ").append(mRadius).append("\n");
-        builder.append("\texpiration : ").append(mExpirationDuration).append("\n");
-        builder.append("\texpirationDateInMS : ").append(mExpirationDateInMs).append("\n");
-        builder.append("\tTransition : ").append(mTransitionType).append("\n");
-        builder.append("\tAdditional data : ").append(mAdditionalData).append("\n");
-        builder.append("\tReceiver : ").append(mPendingIntentClassName).append("\n");
-        return builder.toString();
+        String str = "Geofence " + mRequestId + " : \n";
+        str += "\t(" + mLatitude + ", " + mLongitude + ")\n";
+        str += "\tRadius : " + mRadius + "\n";
+        str += "\tExpiration : " + mExpirationDuration + "\n";
+        str += "\texpirationDateInMS : " + mExpirationDateInMs + "\n";
+        str += "\tTransition : " + mTransitionType + "\n";
+        str += "\tAdditional data : " + mAdditionalData + "\n";
+        str += "\tReceiver : " + mPendingIntentClassName + "\n";
+        return str;
     }
 }

@@ -16,10 +16,10 @@ import java.util.Set;
  * Created by Djavan on 01/07/2015.
  */
 
-public class GeofenceStore {
+class GeofenceStore {
 
     /**
-     * Class that stores geofence
+     * Package local class that stores geofence
      * This implementation stores the geofences in the preferences
      */
 
@@ -40,7 +40,7 @@ public class GeofenceStore {
 
     private static final double NOT_VALID_POSITION = 500;
 
-    private String mTag;
+    private final String mTag;
     private final String mPrefix;
     private final SharedPreferences mPrefs;
 
@@ -242,7 +242,7 @@ public class GeofenceStore {
      * @param geofenceId The id of the geofence to search
      * @return a StorableGeofence which corresponds to the given id. Null if the id doesn't exist in the list
      */
-    public StorableGeofence getStoredGeofence(@NonNull String geofenceId) {
+    private StorableGeofence getStoredGeofence(@NonNull String geofenceId) {
         StorableGeofence storableGeofence = null;
 
         Set<String> geofenceIdSet = mPrefs.getStringSet(mPrefix + GEOFENCE_ID_SET_KEY, null);

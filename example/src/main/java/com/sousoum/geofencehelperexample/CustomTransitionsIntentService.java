@@ -25,11 +25,11 @@ public class CustomTransitionsIntentService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String notifText = "Not a geo event";
+        String notificationText = "Not a geo event";
         GeofencingEvent geoEvent = GeofencingEvent.fromIntent(intent);
         if (geoEvent != null) {
             if (geoEvent.hasError()) {
-                notifText = "Error : " + geoEvent.getErrorCode();
+                notificationText = "Error : " + geoEvent.getErrorCode();
             } else {
                 int transition = geoEvent.getGeofenceTransition();
                 String transitionStr;
@@ -64,11 +64,11 @@ public class CustomTransitionsIntentService extends IntentService {
 
                     strBuilder.append("-");
                 }
-                notifText = strBuilder.toString();
+                notificationText = strBuilder.toString();
             }
         }
 
-        sendNotification(notifText);
+        sendNotification(notificationText);
     }
 
     private void sendNotification(String text) {

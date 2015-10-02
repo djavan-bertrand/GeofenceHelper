@@ -16,7 +16,6 @@ import com.google.android.gms.location.GeofencingApi;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -54,14 +53,14 @@ public class StorableGeofenceManager implements
     private static final String SYNCED_STORE = "SYNCED_STORE";
 
     private final Context mContext;
-    private GeofencingApi mGeofencingAPI = LocationServices.GeofencingApi;
-    private GoogleApiClient mGoogleApiClient;
+    private final GeofencingApi mGeofencingAPI = LocationServices.GeofencingApi;
+    private final GoogleApiClient mGoogleApiClient;
 
     private StorableGeofenceManagerListener mListener;
 
-    private GeofenceStore mToAddStore; // store of the geofence to add to the Google API Client
-    private GeofenceStore mToRemoveStore; // store of the geofence to remove from the Google API Client
-    private GeofenceStore mSyncedStore; // store that represent which geofences are in the Google API Client
+    private final GeofenceStore mToAddStore; // store of the geofence to add to the Google API Client
+    private final GeofenceStore mToRemoveStore; // store of the geofence to remove from the Google API Client
+    private final GeofenceStore mSyncedStore; // store that represent which geofences are in the Google API Client
 
     public StorableGeofenceManager(Context context) {
         mContext = context;
@@ -230,7 +229,7 @@ public class StorableGeofenceManager implements
     /**
      * Create a pending intent from the storable geofence
      * @param storableGeofence The storable geofence which should contain the class name of the pending intent
-     * @return The pending intent of the class if it has been succesfully loaded, or a DefaultTransitionsIntentService
+     * @return The pending intent of the class if it has been successfully loaded, or a DefaultTransitionsIntentService
      */
     private PendingIntent createRequestPendingIntent(StorableGeofence storableGeofence) {
         Class classOfPendingIntent = DefaultTransitionsIntentService.class;
@@ -317,7 +316,7 @@ public class StorableGeofenceManager implements
          * Inner class that will responds to ResultCallback when a geofence will be, successfully or not, removed from the Google API Client
          */
 
-        private String mGeofenceId;
+        private final String mGeofenceId;
         public GeofenceRemoveStatus(@NonNull String geofenceId) {
             mGeofenceId = geofenceId;
         }
@@ -346,7 +345,7 @@ public class StorableGeofenceManager implements
          * Inner class that will responds to ResultCallback when a geofence will be, successfully or not, added to the Google API Client
          */
 
-        private StorableGeofence mGeofence;
+        private final StorableGeofence mGeofence;
 
         public GeofenceAddStatus(@NonNull StorableGeofence geofence) {
             mGeofence = geofence;

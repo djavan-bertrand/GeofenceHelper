@@ -18,7 +18,7 @@ public class DefaultTransitionsIntentService extends IntentService {
 
     /**
      * Default transition intent that only post a notification when the user enters/exits/dwells in a registered geofence
-     * This class is not meant to be called, it is only a fallback if devs forgot to mention their own IntentService
+     * This class is not meant to be called, it is only a fallback if developers forgot to mention their own IntentService
      */
 
     public DefaultTransitionsIntentService() {
@@ -27,11 +27,11 @@ public class DefaultTransitionsIntentService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String notifText = "Not a geo event";
+        String notificationText = "Not a geo event";
         GeofencingEvent geoEvent = GeofencingEvent.fromIntent(intent);
         if (geoEvent != null) {
             if (geoEvent.hasError()) {
-                notifText = "Error : " + geoEvent.getErrorCode();
+                notificationText = "Error : " + geoEvent.getErrorCode();
             } else {
                 int transition = geoEvent.getGeofenceTransition();
                 String transitionStr;
@@ -58,11 +58,11 @@ public class DefaultTransitionsIntentService extends IntentService {
                     strBuilder.append(geo.getRequestId());
                     strBuilder.append("-");
                 }
-                notifText = strBuilder.toString();
+                notificationText = strBuilder.toString();
             }
         }
 
-        sendNotification(notifText);
+        sendNotification(notificationText);
     }
 
     private void sendNotification(String text) {
