@@ -12,5 +12,6 @@ android:
     - sys-img-armeabi-v7a-android-21
     
     # Additional components
-    - extra-google-google_play_services
     - extra-android-m2repository
+    - extra-google-m2repository
+    - extra-google-google_play_services
