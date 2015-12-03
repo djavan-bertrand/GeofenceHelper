@@ -1,3 +1,6 @@
+[![Release](https://img.shields.io/github/tag/djavan-bertrand/GeofenceHelper.svg?label=Jitpack)](https://jitpack.io/#djavan-bertrand/GeofenceHelper)
+[![Build Status](https://travis-ci.org/djavan-bertrand/GeofenceHelper.svg?branch=master)](https://travis-ci.org/djavan-bertrand/GeofenceHelper)
+
 # GeofenceHelper
 
 This library helps you to use the geofencing on Android.
