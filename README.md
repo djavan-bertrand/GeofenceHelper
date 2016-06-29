@@ -27,7 +27,7 @@ Then add the dependency to the GeofenceHelper library in the build.gradle.
 ```
 dependencies {
     // ...
-    compile 'com.github.djavan-bertrand:GeofenceHelper:0.0.1'        
+    compile 'com.github.djavan-bertrand:GeofenceHelper:0.0.2'
 }
 ```
 
