@@ -1,18 +1,23 @@
 package com.sousoum.libgeofencehelper;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresPermission;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingApi;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
@@ -104,32 +109,36 @@ public class StorableGeofenceManager implements
     /**
      * Add a geofence to the store
      * This will also add the geofence to the google api client if connected. If not, it will trigger a connection
+     * This call requires that the permission ACCESS_FINE_LOCATION is granted
      * @param storableGeofence the geofence to store
      * @return true if add has been asked, false otherwise. false could be returned if the geofence is expired
      */
+    @RequiresPermission("android.permission.ACCESS_FINE_LOCATION")
     public boolean addGeofence(@NonNull StorableGeofence storableGeofence) {
         boolean addedOngoing = false;
-        if (! storableGeofence.isExpired())
-        {
-            mToAddStore.storeGeofence(storableGeofence);
+        if (ActivityCompat.checkSelfPermission(mContext,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (!storableGeofence.isExpired()) {
+                mToAddStore.storeGeofence(storableGeofence);
 
-            if (mGoogleApiClient != null && mGoogleApiClient.isConnected())
-            {
-                ArrayList<Geofence> geofenceList = new ArrayList<>();
-                Geofence geofence = storableGeofence.toGeofence();
-                geofenceList.add(geofence);
+                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                    GeofenceAddStatus addStatus = new GeofenceAddStatus(storableGeofence);
 
-                GeofenceAddStatus addStatus = new GeofenceAddStatus(storableGeofence);
+                    GeofencingRequest.Builder requestBuilder = new GeofencingRequest.Builder();
+                    requestBuilder.addGeofence(storableGeofence.toGeofence());
 
-                mGeofencingAPI.addGeofences(mGoogleApiClient, geofenceList, createRequestPendingIntent(storableGeofence)).setResultCallback(addStatus);
-                Log.i(TAG, "Added " + storableGeofence);
+
+                    mGeofencingAPI.addGeofences(mGoogleApiClient, requestBuilder.build(),
+                            createRequestPendingIntent(storableGeofence)).setResultCallback(addStatus);
+                    Log.i(TAG, "Added " + storableGeofence);
+                } else {
+                    googleApiConnect();
+                }
+
+                addedOngoing = true;
             }
-            else
-            {
-                googleApiConnect();
-            }
-
-            addedOngoing = true;
+        } else {
+            Log.e(TAG, "Could not add the geofence: permission ACCESS_FINE_LOCATION required");
         }
 
         return addedOngoing;
@@ -164,65 +173,67 @@ public class StorableGeofenceManager implements
      */
     public void synchronizeAllGeofencesToGoogleApi() {
         Log.i(TAG, "Try to update list of geofences");
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+        if (ContextCompat.checkSelfPermission(mContext,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
 
-            // first, add all (already) stored geofences, without listener
-            ArrayList<StorableGeofence> storedGeofences = mSyncedStore.getAllGeofences();
-            if (!storedGeofences.isEmpty()) {
-                ArrayList<Geofence> geofenceList = new ArrayList<>();
-                // for each geofence, add it to the Google API Client
-                for (StorableGeofence storableGeofence : storedGeofences) {
-                    if (! storableGeofence.isExpired()) {
-                        Geofence geofence = storableGeofence.toGeofence();
-                        geofenceList.clear();
-                        geofenceList.add(geofence);
+                // first, add all (already) stored geofences, without listener
+                ArrayList<StorableGeofence> storedGeofences = mSyncedStore.getAllGeofences();
+                if (!storedGeofences.isEmpty()) {
+                    // for each geofence, add it to the Google API Client
+                    for (StorableGeofence storableGeofence : storedGeofences) {
+                        if (!storableGeofence.isExpired()) {
 
-                        mGeofencingAPI.addGeofences(mGoogleApiClient, geofenceList, createRequestPendingIntent(storableGeofence));
-                        Log.i(TAG, "Added " + storableGeofence);
-                    } else {
-                        // if the geofence has expired, add it to the list to delete
-                        mToRemoveStore.storeGeofenceId(storableGeofence.getId());
+                            GeofencingRequest.Builder requestBuilder = new GeofencingRequest.Builder();
+                            requestBuilder.addGeofence(storableGeofence.toGeofence());
+
+                            mGeofencingAPI.addGeofences(mGoogleApiClient, requestBuilder.build(), createRequestPendingIntent(storableGeofence));
+                            Log.i(TAG, "Added " + storableGeofence);
+                        } else {
+                            // if the geofence has expired, add it to the list to delete
+                            mToRemoveStore.storeGeofenceId(storableGeofence.getId());
+                        }
                     }
+                    Log.i(TAG, "All already stored geofences have been submitted to be synchronized with Google API Client");
                 }
-                Log.i(TAG, "All already stored geofences have been submitted to be synchronized with Google API Client");
-            }
 
-            // add all geofences from the to add list
-            ArrayList<StorableGeofence> toAddGeofences = mToAddStore.getAllGeofences();
-            if (!toAddGeofences.isEmpty()) {
-                ArrayList<Geofence> geofenceList = new ArrayList<>();
-                // for each geofence, add it to the Google API Client
-                for (StorableGeofence storableGeofence : toAddGeofences) {
-                    Geofence geofence = storableGeofence.toGeofence();
-                    geofenceList.clear();
-                    geofenceList.add(geofence);
+                // add all geofences from the to add list
+                ArrayList<StorableGeofence> toAddGeofences = mToAddStore.getAllGeofences();
+                if (!toAddGeofences.isEmpty()) {
+                    // for each geofence, add it to the Google API Client
+                    for (StorableGeofence storableGeofence : toAddGeofences) {
+                        GeofenceAddStatus addStatus = new GeofenceAddStatus(storableGeofence);
 
-                    GeofenceAddStatus addStatus = new GeofenceAddStatus(storableGeofence);
+                        GeofencingRequest.Builder requestBuilder = new GeofencingRequest.Builder();
+                        requestBuilder.addGeofence(storableGeofence.toGeofence());
 
-                    mGeofencingAPI.addGeofences(mGoogleApiClient, geofenceList, createRequestPendingIntent(storableGeofence)).setResultCallback(addStatus);
-                    Log.i(TAG, "Added " + storableGeofence);
+                        mGeofencingAPI.addGeofences(mGoogleApiClient, requestBuilder.build(), createRequestPendingIntent(storableGeofence)).setResultCallback(addStatus);
+                        Log.i(TAG, "Added " + storableGeofence);
+                    }
+                    Log.i(TAG, "All geofences to add have been submitted to be synchronized with Google API Client");
                 }
-                Log.i(TAG, "All geofences to add have been submitted to be synchronized with Google API Client");
-            }
 
-            // remove all geofences from the to remove list
-            Set<String> toRemoveGeofences = mToRemoveStore.getAllGeofenceIds();
-            if (!toRemoveGeofences.isEmpty()) {
-                ArrayList<String> geofenceList = new ArrayList<>();
-                // for each geofence, remove it to the Google API Client
-                for (String geofenceId : toRemoveGeofences) {
-                    geofenceList.clear();
-                    geofenceList.add(geofenceId);
+                // remove all geofences from the to remove list
+                Set<String> toRemoveGeofences = mToRemoveStore.getAllGeofenceIds();
+                if (!toRemoveGeofences.isEmpty()) {
+                    ArrayList<String> geofenceList = new ArrayList<>();
+                    // for each geofence, remove it to the Google API Client
+                    for (String geofenceId : toRemoveGeofences) {
+                        geofenceList.clear();
+                        geofenceList.add(geofenceId);
 
-                    GeofenceRemoveStatus removeStatus = new GeofenceRemoveStatus(geofenceId);
+                        GeofenceRemoveStatus removeStatus = new GeofenceRemoveStatus(geofenceId);
 
-                    mGeofencingAPI.removeGeofences(mGoogleApiClient, geofenceList).setResultCallback(removeStatus);
-                    Log.i(TAG, "Removed " + geofenceId);
+                        mGeofencingAPI.removeGeofences(mGoogleApiClient, geofenceList).setResultCallback(removeStatus);
+                        Log.i(TAG, "Removed " + geofenceId);
+                    }
+                    Log.i(TAG, "All geofences to remove have been submitted to be synchronized with Google API Client");
                 }
-                Log.i(TAG, "All geofences to remove have been submitted to be synchronized with Google API Client");
+            } else {
+                googleApiConnect();
             }
         } else {
-            googleApiConnect();
+            Log.e(TAG, "Not able to synchronize Geofences because ACCESS_FINE_LOCATION permission is required.");
         }
     }
 
@@ -304,7 +315,7 @@ public class StorableGeofenceManager implements
 
     //region GoogleApiClient.OnConnectionFailedListener
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.e(TAG, "Connection to Google API client failed with error code :" + connectionResult.getErrorCode());
     }
     //endregion GoogleApiClient.OnConnectionFailedListener
@@ -322,7 +333,7 @@ public class StorableGeofenceManager implements
         }
 
         @Override
-        public void onResult(Status status) {
+        public void onResult(@NonNull Status status) {
             if (status.isSuccess()) {
                 Log.i(TAG, "Removed successfully geofence " + mGeofenceId + " to the Google API");
                 // since the operation is successful, remove from the local store
@@ -352,7 +363,7 @@ public class StorableGeofenceManager implements
         }
 
         @Override
-        public void onResult(Status status) {
+        public void onResult(@NonNull Status status) {
             if (status.isSuccess()) {
                 Log.i(TAG, "Added successfully geofence " + mGeofence + " to the Google API");
                 // since the operation is successful, remove from the local store

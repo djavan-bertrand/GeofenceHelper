@@ -1,10 +1,15 @@
 package com.sousoum.geofencehelperexample;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -28,6 +33,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements LocationListener, StorableGeofenceManager.StorableGeofenceManagerListener {
 
     private static final String TAG = "MainActivity";
+    private static final int ACCESS_FINE_LOCATION_REQUEST_CODE = 0;
 
     private static final String GEOFENCE_ID_FOR_DEFAULT_RECEIVER = "DefaultReceiverGeofence";
     private static final String GEOFENCE_ID_FOR_CUSTOM_RECEIVER = "CustomReceiverGeofence";
@@ -59,34 +65,46 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        // get the last known location with best accuracy
-        List<String> providers = mLocationManager.getProviders(true);
-        for (String provider : providers) {
-            Location l = mLocationManager.getLastKnownLocation(provider);
-            if (l == null) {
-                continue;
-            }
-            if (mCurrentLocation == null || l.getAccuracy() < mCurrentLocation.getAccuracy()) {
-                mCurrentLocation = l;
-            }
-        }
-
         updateUI();
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    ACCESS_FINE_LOCATION_REQUEST_CODE);
+        } else {
+            onAccessFineLocationPermissionGranted();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                2000,
-                1, this);
+
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            mLocationManager.removeUpdates(this);
+        }
+    }
 
-        mLocationManager.removeUpdates(this);
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case ACCESS_FINE_LOCATION_REQUEST_CODE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    onAccessFineLocationPermissionGranted();
+                }
+            }
+        }
     }
 
     @Override
@@ -111,6 +129,26 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         return super.onOptionsItemSelected(item);
     }
 
+    private void onAccessFineLocationPermissionGranted() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // get the last known location with best accuracy
+            List<String> providers = mLocationManager.getProviders(true);
+            for (String provider : providers) {
+                Location l = mLocationManager.getLastKnownLocation(provider);
+                if (l == null) {
+                    continue;
+                }
+                if (mCurrentLocation == null || l.getAccuracy() < mCurrentLocation.getAccuracy()) {
+                    mCurrentLocation = l;
+                }
+            }
+            updateUI();
+
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, this);
+        }
+    }
+
     private void updateUI() {
         if (mCurrentLocation != null) {
             mDefaultBt.setEnabled(true);
@@ -123,6 +161,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             mDeleteBt.setEnabled(false);
             mTextView.setText("Getting your current location...");
         }
+        mDefaultBt.setEnabled(true);
+        mCustomBt.setEnabled(true);
+        mDeleteBt.setEnabled(true);
+        mTextView.setText("");
+        mCurrentLocation = new Location("test");
+        mCurrentLocation.setLatitude(2.090909);
+        mCurrentLocation.setLongitude(0.9191);
     }
 
     public void onCustomClicked(View view) {
@@ -163,7 +208,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 Geofence.NEVER_EXPIRE,
                 Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT,
                 additionalData);
-        boolean addedOnGoing = mGeofenceManager.addGeofence(storableGeofence);
+        boolean addedOnGoing = false;
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            addedOnGoing = mGeofenceManager.addGeofence(storableGeofence);
+        }
         if (!addedOnGoing) {
             Log.e(TAG, "Addition of geofence has been refused " + storableGeofence);
         }
