@@ -206,7 +206,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 mCurrentLocation.getLongitude(),
                 200,
                 Geofence.NEVER_EXPIRE,
-                Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT,
+                300000, // 5 minutes
+                Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT | Geofence.GEOFENCE_TRANSITION_DWELL,
                 additionalData);
         boolean addedOnGoing = false;
         if (ContextCompat.checkSelfPermission(this,

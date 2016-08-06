@@ -33,6 +33,7 @@ class GeofenceStore {
     private static final String LONGITUDE_KEY = "LONGITUDE_KEY";
     private static final String RADIUS_KEY = "RADIUS_KEY";
     private static final String EXPIRATION_KEY = "EXPIRATION_KEY";
+    private static final String LOITERING_DELAY_KEY = "LOITERING_DELAY_KEY";
     private static final String TRANSITION_KEY = "TRANSITION_KEY";
     private static final String EXPIRATION_DATE_KEY = "EXPIRATION_DATE_KEY";
     private static final String ADDITIONAL_DATA_KEY = "ADDITIONAL_DATA_KEY";
@@ -74,6 +75,7 @@ class GeofenceStore {
         editor.putLong(prefix + LONGITUDE_KEY, Double.doubleToRawLongBits(geofence.getLongitude()));
         editor.putFloat(prefix + RADIUS_KEY, geofence.getRadius());
         editor.putLong(prefix + EXPIRATION_KEY, geofence.getExpirationDuration());
+        editor.putInt(prefix + LOITERING_DELAY_KEY, geofence.getLoiteringDelay());
         editor.putInt(prefix + TRANSITION_KEY, geofence.getTransitionType());
         editor.putLong(prefix + EXPIRATION_DATE_KEY, geofence.getExpirationDateInMs());
 
@@ -133,6 +135,7 @@ class GeofenceStore {
             editor.remove(prefix + LONGITUDE_KEY);
             editor.remove(prefix + RADIUS_KEY);
             editor.remove(prefix + EXPIRATION_KEY);
+            editor.remove(prefix + LOITERING_DELAY_KEY);
             editor.remove(prefix + TRANSITION_KEY);
             editor.remove(prefix + EXPIRATION_DATE_KEY);
             Set<String> keySet = mPrefs.getStringSet(prefix + ADDITIONAL_DATA_KEY, null);
@@ -253,6 +256,7 @@ class GeofenceStore {
             double longitude = Double.longBitsToDouble(mPrefs.getLong(prefix + LONGITUDE_KEY, Double.doubleToRawLongBits(NOT_VALID_POSITION)));
             float radius = mPrefs.getFloat(prefix + RADIUS_KEY, 100);
             long expiration = mPrefs.getLong(prefix + EXPIRATION_KEY, Geofence.NEVER_EXPIRE);
+            int loiteringDelay = mPrefs.getInt(prefix + LOITERING_DELAY_KEY, 0);
             int transition = mPrefs.getInt(prefix + TRANSITION_KEY, Geofence.GEOFENCE_TRANSITION_ENTER);
             HashMap<String, Object> additionalInfo = new HashMap<>();
             Set<String> keySet = mPrefs.getStringSet(prefix + ADDITIONAL_DATA_KEY, null);
@@ -279,10 +283,9 @@ class GeofenceStore {
                 }
             }
 
-            storableGeofence = new StorableGeofence(geofenceId, pendingIntentClassName, latitude, longitude, radius, expiration, transition, additionalInfo);
+            storableGeofence = new StorableGeofence(geofenceId, pendingIntentClassName, latitude, longitude, radius, expiration, loiteringDelay, transition, additionalInfo);
         }
 
         return storableGeofence;
     }
-
 }
